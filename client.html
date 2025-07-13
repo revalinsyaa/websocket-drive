@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MADDRIVE</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      background: linear-gradient(to right, #f8f9fa, #e3e6ea);
+      min-height: 100vh;
+    }
+
+    .toolbar {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .toolbar button {
+      background: #385170;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+
+    .toolbar button:hover {
+      background: #747474;
+    }
+
+    #file-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 24px;
+    }
+
+    .file-item {
+      background: white;
+      border-radius: 16px;
+      padding: 20px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: box-shadow 0.3s, transform 0.2s;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .file-item:hover {
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+      transform: translateY(-4px);
+    }
+
+    .file-icon {
+      font-size: 40px;
+      margin-bottom: 10px;
+      color: #6c757d;
+    }
+
+    .file-name {
+      font-size: 14px;
+      word-break: break-word;
+      color: #343a40;
+      font-weight: 500;
+    }
+
+    .menu {
+      position: absolute;
+      display: none;
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      min-width: 150px;
+    }
+
+    .menu button {
+      display: block;
+      width: 100%;
+      padding: 12px 20px;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .menu button:hover {
+      background-color: #f1f3f5;
+    }
+
+    #input-modal, #editor-modal, #confirm-modal, #move-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
+      justify-content: center;
+      align-items: center;
+      z-index: 3000;
+    }
+
+    .modal-box {
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      text-align: center;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal-box p {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+
+    .modal-box select, .modal-box input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border: 1px solid #ced4da;
+      border-radius: 10px;
+      font-size: 14px;
+      margin-left: -10px;
+    }
+
+    .modal-box button {
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 0 8px;
+    }
+
+    #confirm-ok, #move-ok {
+      background: #385170;
+      color: white;
+    }
+
+    #confirm-cancel, #move-cancel {
+      background: #780C28;
+      color: white;
+    }
+
+    #editor-modal-box {
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 800px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      animation: fadeIn 0.3s ease;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #editor-modal-box textarea {
+      width: 100%;
+      height: 400px;
+      padding: 16px;
+      font-size: 15px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      margin-bottom: 20px;
+    }
+
+    #editor-modal-box button {
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 5px;
+    }
+
+    #editor-modal-box button:first-of-type {
+      background: #6c63ff;
+      color: white;
+    }
+
+    #editor-modal-box button:last-of-type {
+      background: #ff6b81;
+      color: white;
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #17a2b8;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 4000;
+      display: none;
+      font-weight: bold;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <h2>📂 MADDRIVE</h2>
+
+  <div class="toolbar">
+    <button onclick="createFile()">➕ Buat File</button>
+    <button onclick="createFolder()">📁 Buat Folder</button>
+    <button onclick="goUp()">⬆️ Kembali</button>
+  </div>
+
+  <div id="file-list">Mengambil data...</div>
+
+  <div class="menu" id="context-menu">
+    <button onclick="handleAction('edit')">✏️ Edit</button>
+    <button onclick="handleAction('rename')">✏️ Rename</button>
+    <button onclick="handleAction('delete')">🗑️ Hapus</button>
+    <button onclick="handleAction('move')">📁 Pindah</button>
+  </div>
+
+  <!-- Input Modal -->
+  <div id="input-modal">
+    <div class="modal-box">
+      <p id="input-modal-title">Buat File</p>
+      <input id="input-modal-field" type="text" placeholder="Nama file..." />
+      <div>
+        <button id="confirm-cancel" onclick="closeInputModal()">Batal</button>
+        <button id="confirm-ok" onclick="confirmInputModal()">Buat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Editor Modal -->
+  <div id="editor-modal">
+    <div id="editor-modal-box">
+      <h3>Edit File: <span id="editor-filename"></span></h3>
+      <textarea id="editor-content"></textarea>
+      <br>
+      <button onclick="saveEdit()">💾 Simpan</button>
+      <button onclick="closeEditor()">❌ Batal</button>
+    </div>
+  </div>
+
+  <!-- Konfirmasi Hapus -->
+  <div id="confirm-modal">
+    <div class="modal-box">
+      <p id="confirm-text">Yakin ingin menghapus file/folder?</p>
+      <button id="confirm-ok" onclick="confirmModalResolve(true)">OK</button>
+      <button id="confirm-cancel" onclick="confirmModalResolve(false)">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Modal Pindah -->
+  <div id="move-modal">
+    <div class="modal-box">
+      <p id="move-modal-text">Pilih folder tujuan:</p>
+      <select id="move-folder-select"></select>
+      <br>
+      <button id="confirm-ok" onclick="moveModalResolve(true)">OK</button>
+      <button id="confirm-cancel" onclick="moveModalResolve(false)">Cancel</button>
+    </div>
+  </div>
+
+  <div class="notification" id="notification"></div>
+
+  <!-- Gunakan HTML dan CSS yang sudah kamu buat sebelumnya -->
+<!-- Ganti hanya bagian handleAction dan pemicu context menu -->
+
+<!-- Tambahkan/ubah bagian berikut di dalam <script> -->
+<script>
+  const socket = new WebSocket('ws://localhost:8080');
+  const fileListDiv = document.getElementById('file-list');
+  const contextMenu = document.getElementById('context-menu');
+  const notification = document.getElementById('notification');
+  let currentPath = '.';
+  let selectedFile = '';
+  let inputCallback = null;
+
+  socket.addEventListener('open', () => requestList());
+  socket.addEventListener('message', event => {
+    try {
+      const data = JSON.parse(event.data);
+      if (Array.isArray(data)) {
+        renderFileList(data);
+      } else if (data.action === 'open') {
+        openEditor(data.file, data.content);
+      } else if (data.success || data.error) {
+        showNotification(data.success || data.error);
+        if (!data.stay && data.success) requestList();
+      }
+    } catch (e) {
+      console.error('Invalid JSON:', event.data);
+    }
+  });
+
+  function renderFileList(data) {
+    fileListDiv.innerHTML = '';
+    data.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'file-item';
+      div.dataset.filename = currentPath + '/' + item.name;
+
+      const icon = document.createElement('div');
+      icon.className = 'file-icon';
+      icon.innerHTML = item.type === 'folder' ? '📁' : '📄';
+
+      const name = document.createElement('div');
+      name.className = 'file-name';
+      name.textContent = item.name;
+
+      div.appendChild(icon);
+      div.appendChild(name);
+
+      div.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        selectedFile = currentPath + '/' + item.name;
+        showMenu(e.pageX, e.pageY);
+      });
+
+      if (item.type === 'folder') {
+        div.addEventListener('click', () => {
+          currentPath = currentPath + '/' + item.name;
+          requestList();
+        });
+      } else {
+        div.addEventListener('click', () => {
+          selectedFile = currentPath + '/' + item.name;
+          socket.send(JSON.stringify({ action: 'open', file: selectedFile }));
+        });
+      }
+
+      fileListDiv.appendChild(div);
+    });
+  }
+
+  function requestList() {
+    socket.send(JSON.stringify({ action: 'list', path: currentPath }));
+  }
+
+  function showMenu(x, y) {
+    contextMenu.style.left = `${x}px`;
+    contextMenu.style.top = `${y}px`;
+    contextMenu.style.display = 'block';
+  }
+
+  function hideMenu() {
+    contextMenu.style.display = 'none';
+  }
+
+  window.addEventListener('click', () => hideMenu());
+  window.addEventListener('contextmenu', e => e.preventDefault());
+
+  async function handleAction(action) {
+    hideMenu();
+    if (!selectedFile) return;
+
+    if (action === 'edit') {
+      socket.send(JSON.stringify({ action: 'open', file: selectedFile }));
+    } else if (action === 'rename') {
+      openInputModal('Ganti Nama', 'Nama baru...', (newName) => {
+        socket.send(JSON.stringify({ action: 'rename', path: selectedFile, newName }));
+      });
+    } else if (action === 'delete') {
+      const confirmed = await customConfirm("Yakin ingin menghapus file/folder?");
+      if (confirmed) {
+        socket.send(JSON.stringify({ action: 'delete', path: selectedFile }));
+      }
+    } else if (action === 'move') {
+      socket.send(JSON.stringify({ action: 'list-folders', path: '.' }));
+      const handler = async function (event) {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.folders) {
+            socket.removeEventListener('message', handler);
+            const target = await showMoveModal(data.folders);
+            if (target) {
+              socket.send(JSON.stringify({ action: 'move', path: selectedFile, target }));
+            }
+          }
+        } catch { }
+      };
+      socket.addEventListener('message', handler);
+    }
+  }
+
+  function createFile() {
+    openInputModal('Buat File Baru', 'Nama file...', (name) => {
+      socket.send(JSON.stringify({ action: 'create', path: currentPath + '/' + name }));
+    });
+  }
+
+  function createFolder() {
+    openInputModal('Buat Folder Baru', 'Nama folder...', (name) => {
+      socket.send(JSON.stringify({ action: 'mkdir', path: currentPath + '/' + name }));
+    });
+  }
+
+  function goUp() {
+    if (currentPath === '.' || currentPath === '') return;
+    const parts = currentPath.split('/');
+    parts.pop();
+    currentPath = parts.join('/') || '.';
+    requestList();
+  }
+
+  function openInputModal(title, placeholder, callback) {
+    document.getElementById('input-modal-title').textContent = title;
+    const field = document.getElementById('input-modal-field');
+    field.placeholder = placeholder;
+    field.value = '';
+    inputCallback = callback;
+    document.getElementById('input-modal').style.display = 'flex';
+    field.focus();
+  }
+
+  function closeInputModal() {
+    document.getElementById('input-modal').style.display = 'none';
+  }
+
+  function confirmInputModal() {
+    const value = document.getElementById('input-modal-field').value.trim();
+    if (value && inputCallback) {
+      inputCallback(value);
+    }
+    closeInputModal();
+  }
+
+  function openEditor(file, content) {
+    document.getElementById('editor-filename').textContent = file;
+    document.getElementById('editor-content').value = content;
+    document.getElementById('editor-modal').style.display = 'flex';
+  }
+
+  function closeEditor() {
+    document.getElementById('editor-modal').style.display = 'none';
+  }
+
+  function saveEdit() {
+    const content = document.getElementById('editor-content').value;
+    const file = document.getElementById('editor-filename').textContent;
+    socket.send(JSON.stringify({ action: 'edit', file, content }));
+    closeEditor();
+  }
+
+  function showNotification(msg) {
+    notification.textContent = msg;
+    notification.style.display = 'block';
+    setTimeout(() => {
+      notification.style.display = 'none';
+    }, 5000);
+  }
+
+  function customConfirm(message) {
+    return new Promise((resolve) => {
+      document.getElementById('confirm-text').textContent = message;
+      document.getElementById('confirm-modal').style.display = 'flex';
+      window.confirmModalResolve = function (result) {
+        document.getElementById('confirm-modal').style.display = 'none';
+        resolve(result);
+      };
+    });
+  }
+
+  function showMoveModal(folders) {
+    return new Promise((resolve) => {
+      const select = document.getElementById('move-folder-select');
+      select.innerHTML = '';
+      folders.forEach(folder => {
+        const opt = document.createElement('option');
+        opt.value = folder;
+        opt.textContent = folder;
+        select.appendChild(opt);
+      });
+      document.getElementById('move-modal').style.display = 'flex';
+      window.moveModalResolve = function (result) {
+        document.getElementById('move-modal').style.display = 'none';
+        if (result) resolve(select.value);
+        else resolve(null);
+      };
+    });
+  }
+</script>
+
+</body>
+</html>
